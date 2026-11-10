@@ -1,0 +1,5 @@
+.DS_Store
+__pycache__/
+# written by herdr-app check
+mods/*/gpui-kit.d.ts
+mods/*/jsconfig.json

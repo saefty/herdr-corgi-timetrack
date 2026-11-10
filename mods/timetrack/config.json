@@ -1,0 +1,21 @@
+{
+  "sample_seconds": 30,
+  "idle_seconds": 120,
+  "gap_minutes": 10,
+  "min_segment_seconds": 60,
+  "week_target_hours": 40,
+  "excel_dir": "~/Documents/Timesheets",
+  "excel_file": "Timesheet-{year}.xlsx",
+  "sheet_language": "en",
+  "excel_every_minutes": 15,
+  "keep_months": 24,
+  "work_apps": [
+    "com.microsoft.VSCode", "Code",
+    "com.todesktop.230313mzl4w4u92", "Cursor",
+    "com.apple.dt.Xcode", "Xcode",
+    "com.jetbrains.intellij", "com.jetbrains.intellij.ce", "IntelliJ IDEA",
+    "com.tinyspeck.slackmacgap", "Slack",
+    "com.microsoft.teams2", "com.microsoft.teams", "Microsoft Teams",
+    "us.zoom.xos", "zoom.us"
+  ]
+}
