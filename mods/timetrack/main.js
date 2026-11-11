@@ -72,6 +72,7 @@ export default class TimeTrack extends View {
     return h_flex().id("timetrack-chip").h(26).flex_none().px(6).gap(5).items_center().rounded(6).text_size(12.5)
       .text_color(state === "tracking" ? t.foreground : state === "paused" ? t.muted : t.dim).hover((st) => st.bg(t.hover))
       .tooltip(state === "tracking" ? "Work time today: tracking" : state === "paused" ? "Work time today: paused" : "Work time today")
+      .accessibility_label("Work time today. Click for details.")
       .on_mouse_down("left", (_e, cx) => cx.stop_propagation()) // a bar may drag the window
       .on_click(() => openOverlay(POPUP))
       .child(div().size(7).flex_none().rounded_full().bg(state === "tracking" ? t.ansi2 : state === "paused" ? t.muted : t.dim))
@@ -127,8 +128,8 @@ export default class TimeTrack extends View {
       .child(field("note", "Note"))
       .child(div().text_size(11).text_color(t.dim).child("Edits in the Excel file are kept the same way."))
       .child(h_flex().gap(6)
-        .child(button("tt-save", "Save", this.save(false), true))
-        .child(button("tt-cancel", "Cancel", (_e, cx) => { this.edit(false); cx.notify(); }, false))
+        .child(button("tt-save", "Save", this.save(false), true).tooltip("Save the changed fields for today."))
+        .child(button("tt-cancel", "Cancel", (_e, cx) => { this.edit(false); cx.notify(); }, false).tooltip("Discard changes and go back."))
         .child(div().flex_1())
         .child(button("tt-reset", "Use tracked times", this.save(true), false).tooltip("Drop today's start/end/break corrections")))
       .when(Boolean(this.err), (el) => el.child(div().text_size(11).text_color(t.blocked).truncate().child(this.err)));
@@ -158,7 +159,7 @@ export default class TimeTrack extends View {
     const from = Math.min(8, ...segs.map(([a]) => Math.floor(hours(a))));
     const to = Math.max(18, Math.ceil(hours(now)), ...segs.map(([, b]) => Math.ceil(hours(b))));
     const pct = (h) => `${((h - from) / (to - from)) * 100}%`;
-    const timeline = div().relative().h(14).w_full().rounded(4).bg(t.surface).overflow_hidden()
+    const timeline = div().id("tt-timeline").tooltip("Today's tracked work segments; the line marks now.").relative().h(14).w_full().rounded(4).bg(t.surface).overflow_hidden()
       .children(segs.map(([a, b, open], i) => div().id(`seg-${i}`).absolute().top(0).h_full()
         .left(pct(hours(a))).w(`${Math.max(0.6, ((b - a) / 3600 / (to - from)) * 100)}%`)
         .bg(green).opacity(open ? 1 : 0.7).tooltip(`${clock(a)}–${clock(b)} · ${hm(b - a)}`)))
@@ -167,7 +168,7 @@ export default class TimeTrack extends View {
       .children([from, Math.round((from + to) / 2), to].map((h) => div().child(`${pad(h % 24)}:00`)));
 
     const edited = s.edited ?? [];
-    const fact = (label, value, f) => v_flex().gap(1).child(div().text_size(10.5).text_color(t.dim).child(edited.includes(f) ? `${label} ✎` : label))
+    const fact = (label, value, f, tip) => v_flex().id(`tt-fact-${label}`).tooltip(tip).gap(1).child(div().text_size(10.5).text_color(t.dim).child(edited.includes(f) ? `${label} ✎` : label))
       .child(div().text_size(13).text_color(edited.includes(f) ? t.accent : t.foreground).child(value));
     const week = s.week / 3600, target = s.target || 40;
     const button = (id, label, onClick, primary) => h_flex().id(id).h(26).px(10).items_center().justify_center().rounded(6)
@@ -177,31 +178,31 @@ export default class TimeTrack extends View {
     return box
       .child(h_flex().items_center().justify_between()
         .child(h_flex().gap(8).items_center()
-          .child(div().size(9).rounded_full().bg(dot))
-          .child(div().text_size(20).font_semibold().child(hm(s.net)))
+          .child(div().id("tt-dot").size(9).rounded_full().bg(dot).tooltip(`Tracker state: ${stale ? "not running" : STATE[state]}.`).accessibility_label(`Tracker state: ${stale ? "not running" : STATE[state]}`))
+          .child(div().id("tt-net").text_size(20).font_semibold().tooltip("Net work time tracked today (hours:minutes).").child(hm(s.net)))
           .child(div().text_color(t.muted).child("today")))
         .child(div().text_color(state === "tracking" ? green : t.muted).child(stale ? "Tracker not running" : STATE[state])))
       .child(v_flex().gap(3).child(timeline).child(ticks))
       .child(h_flex().justify_between()
-        .child(fact("Start", s.start === null ? "–" : sod(s.start), "start"))
-        .child(fact("End", s.end === null ? "–" : sod(s.end), "end"))
-        .child(fact("Breaks", hm(s.breaks), "breaks"))
-        .child(fact("Net", hm(s.net))))
+        .child(fact("Start", s.start === null ? "–" : sod(s.start), "start", "When today's tracked work began."))
+        .child(fact("End", s.end === null ? "–" : sod(s.end), "end", "When today's tracked work last ended."))
+        .child(fact("Breaks", hm(s.breaks), "breaks", "Total break time between start and end today."))
+        .child(fact("Net", hm(s.net), undefined, "Worked time today: end minus start minus breaks.")))
       .child(v_flex().gap(3)
-        .child(h_flex().justify_between().text_color(t.muted)
+        .child(h_flex().id("tt-week").tooltip("Net work time this week against the weekly target.").justify_between().text_color(t.muted)
           .child(div().child("This week"))
           .child(div().child(`${hm(s.week)} / ${target} h`)))
-        .child(div().h(5).w_full().rounded(3).bg(t.surface).overflow_hidden()
+        .child(div().id("tt-week-bar").tooltip("Progress toward the weekly target.").h(5).w_full().rounded(3).bg(t.surface).overflow_hidden()
           .child(div().h_full().w(`${Math.min(100, (week / target) * 100)}%`).bg(week >= target ? green : t.accent))))
       .when(Boolean(s.note), (el) => el.child(div().text_size(11.5).text_color(t.accent).truncate().child(`✎ ${s.note}`)))
       .when(!s.note && ((s.context ?? []).length > 0 || (s.projects ?? []).length > 0), (el) => el.child(div().text_size(11.5).text_color(t.dim).truncate()
         .child([...(s.context ?? []), ...(s.projects ?? [])].join(" · "))))
       .child(h_flex().gap(6)
-        .child(state === "paused" ? button("tt-resume", "Resume", this.act("--resume"), true) : button("tt-pause", "Pause", this.act("--pause"), false))
+        .child(state === "paused" ? button("tt-resume", "Resume", this.act("--resume"), true).tooltip("Resume time tracking.") : button("tt-pause", "Pause", this.act("--pause"), false).tooltip("Pause time tracking."))
         .when(state === "tracking", (el) => el.child(button("tt-notwork", "Not work", this.act("--notwork"), false).tooltip("Delete the current segment and pause")))
         .child(button("tt-edit", "Edit", (_e, cx) => { this.edit(true); cx.notify(); }, false).tooltip("Correct today's start, end, breaks or note"))
         .child(div().flex_1())
-        .child(button("tt-excel", "Open Excel", this.act("open"), false).tooltip(s.xlsx)))
+        .child(button("tt-excel", "Open Excel", this.act("open"), false).tooltip("Open the time-tracking spreadsheet.")))
       .when(Boolean(this.err || s.xlsx_error || s.xlsx_hold), (el) => el.child(div().text_size(11).truncate()
         .text_color(this.err || (s.xlsx_error && !/open in Excel/.test(s.xlsx_error)) ? t.blocked : t.dim)
         .child(this.err || (s.xlsx_hold ? "Excel file: writing is on hold" : `Excel file: ${s.xlsx_error}`))));
