@@ -14,7 +14,8 @@ segment ends at its last qualifying sample (backdated). Only segments are stored
 month; a year workbook (.xlsx, written by hand with zipfile) mirrors them.
 
 The daemon keeps running when Herdr quits (app/idle sampling is independent of Herdr; it costs two
-tiny subprocesses per sample) and is (re)started by the chip via --facts. It re-execs
+tiny subprocesses per sample) and is (re)started by the chip via --facts. It stops once track.py itself is
+gone (its app home was deleted). It re-execs
 itself when this file changes. A kill loses nothing: the open segment is in state.json and gets
 closed, backdated, by the next run.
 
@@ -816,6 +817,9 @@ def daemon():
         except Exception:
             log("tick failed:\n" + traceback.format_exc())
         time.sleep(max(5, load_cfg()["sample_seconds"]))
+        if not os.path.exists(me):  # its app home was deleted (a copy for tests): nothing will run or read it again
+            log("track.py is gone, stopping")
+            return
         try:
             if os.path.getmtime(me) != born:
                 log("track.py changed, restarting")
