@@ -3,13 +3,14 @@
 //   "float"  the same chip in a floating block;
 //   none     the popup the chip opens: timeline, edit form, Pause/Resume/Not work, Open Excel.
 // track.py (next to this file) is the tracker, a detached sampler. Every 10 s a chip reports what Herdr shows
-// (track.py --facts, which also starts it) and reads timetrack-data/status.json. track.py rewrites that file on
+// (herdr.json; through track.py --facts, which also starts it, until the sampler runs) and reads timetrack-data/status.json. track.py rewrites that file on
 // every sample and after every action; the popup redraws from it. The popup never takes the keyboard from the
 // terminal: its inputs only get focus when clicked.
 // Which Herdr contexts count as work comes from the goto.context hook and timetrack.contexts (PROVIDERS.md).
 import { View, div } from "gpui-kit";
 import { h_flex, v_flex, InputState, Input } from "gpui-base";
-import { theme, exec, appHome, readTextFile, watchFolder, props, openOverlay, shared, spaces, agents } from "herdr";
+import { theme, exec, appHome, readTextFile, writeTextFile, watchFolder, props, openOverlay, shared, spaces, agents } from "herdr";
+import { samplerAlive } from "./chip.js";
 
 const DATA = () => `${appHome()}/timetrack-data`;
 const TRACK = () => `${appHome()}/mods/timetrack/track.py`;
@@ -52,11 +53,23 @@ export default class TimeTrack extends View {
     });
   }
 
+  // The facts for track.py, every 10 s. While the sampler is alive the chip writes herdr.json itself: a process
+  // start per report is the mod's largest steady cost, and slow where every start is checked by security software.
+  // track.py --facts stays the way to start the sampler and to bring it back.
+  async report() {
+    const f = facts();
+    if (samplerAlive(this.s, Date.now())) {
+      const file = `${DATA()}/herdr.json`;
+      try { await writeTextFile(file, JSON.stringify({ ...f, at: Date.now() }), await readTextFile(file)); return; } catch { /* changed meanwhile: track.py writes it */ }
+    }
+    await exec("python3", [TRACK(), "--facts", JSON.stringify(f)]).catch(() => null);
+  }
+
   // ponytail: polled with the facts (the chip lags a popup action by up to 10 s); cheap, and watchFolder from a
   // bar block didn't wake reliably.
   initChip(cx) {
     const tick = (cx) => cx.spawn(async (cx) => {
-      await exec("python3", [TRACK(), "--facts", JSON.stringify(facts())]).catch(() => null);
+      await this.report();
       try { this.s = JSON.parse((await readTextFile(`${DATA()}/status.json`)) ?? "null"); } catch {}
       const key = this.s ? `${this.s.state}|${hm(this.s.net)}|${Math.floor(this.s.at / 60)}` : "";
       if (key !== this.key) { this.key = key; cx.notify(); }
