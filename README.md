@@ -54,6 +54,8 @@ Excel workbook, one sheet per month, and changes you make in that workbook are k
 
 ![The workbook](docs/screenshots/workbook.png)
 
+![With `window_title`, the window is named after the tracked project: here the system's title of the window, printed in its own terminal](docs/screenshots/window-title.png)
+
 ## Works with
 
 The time tracker, [Go to](https://github.com/saefty/herdr-corgi-goto), the
