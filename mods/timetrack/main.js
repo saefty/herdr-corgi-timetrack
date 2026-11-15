@@ -9,7 +9,7 @@
 // Which Herdr contexts count as work comes from the goto.context hook and timetrack.contexts (PROVIDERS.md).
 import { View, div } from "gpui-kit";
 import { h_flex, v_flex, InputState, Input } from "gpui-base";
-import { theme, exec, appHome, readTextFile, writeTextFile, watchFolder, props, openOverlay, shared, spaces, agents } from "herdr";
+import { theme, exec, appHome, readTextFile, writeTextFile, watchFolder, props, openOverlay, shared, spaces, agents, checking } from "herdr";
 import { samplerAlive } from "./chip.js";
 
 const DATA = () => `${appHome()}/timetrack-data`;
@@ -44,13 +44,23 @@ export default class TimeTrack extends View {
     this.editing = false;
     // Inputs exist from the start but only take the keyboard when clicked: the popup never grabs focus.
     this.inputs = Object.fromEntries(EDIT.map(([f, , placeholder]) => [f, InputState.new({ placeholder })]));
+    if (checking()) return; // herdr-app check: nothing to watch
     cx.spawn(async (cx) => {
       for (;;) {
         try { this.s = JSON.parse((await readTextFile(`${DATA()}/status.json`)) ?? "null"); } catch {}
         cx.notify();
-        try { await watchFolder(DATA()); } catch { return; }
+        if (this.closed) return;
+        this.watch = watchFolder(DATA());
+        try { await this.watch; } catch { return; }
+        if (this.closed) return;
       }
     });
+  }
+
+  // The popup went: its watch on the data folder is given back (a cancelled watch resolves, and the loop ends).
+  async close() {
+    this.closed = true;
+    this.watch?.cancel();
   }
 
   // The facts for track.py, every 10 s. While the sampler is alive the chip writes herdr.json itself: a process
@@ -68,6 +78,8 @@ export default class TimeTrack extends View {
   // ponytail: polled with the facts (the chip lags a popup action by up to 10 s); cheap, and watchFolder from a
   // bar block didn't wake reliably.
   initChip(cx) {
+    // `herdr-app check` runs init for real: there the chip must not start the tracker or write herdr.json.
+    if (checking()) return;
     const tick = (cx) => cx.spawn(async (cx) => {
       await this.report();
       try { this.s = JSON.parse((await readTextFile(`${DATA()}/status.json`)) ?? "null"); } catch {}

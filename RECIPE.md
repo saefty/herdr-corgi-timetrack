@@ -72,7 +72,7 @@ edits the person makes in that workbook are read back and kept.
   and opens the popup with `openOverlay({ mod: "timetrack", kind: "popup", width: 340, height: 320 })`. The
   facts come from `spaces()` (the active one), `agents()` (`status`, `address`, `space`, `space_name`),
   `shared("goto.context")` (`spaces`, `terminals`, `current`) and `shared("timetrack.contexts")`. The popup
-  watches the data folder with `watchFolder` and runs `track.py --pause | --resume | --notwork | --set DATE
+  watches the data folder with `watchFolder` (cancelled in `close()`) and runs `track.py --pause | --resume | --notwork | --set DATE
   field=value…`, and `open <workbook>`. Inputs: gpui-base `InputState`/`Input`, made in `init`.
 - `track.py`, Python standard library only: a detached daemon (`--run`, one per data folder via `flock` on
   `daemon.lock`, started by `--facts`/`--spawn`, `--stop`) that samples `ioreg -c IOHIDSystem -d 4`
@@ -96,6 +96,7 @@ edits the person makes in that workbook are read back and kept.
 - The daemon outlives Herdr: report facts with a timestamp and treat old ones as "Herdr not running".
 - A mod can't import another mod's files (`../timetrack/x.js` fails the check), so a bar that draws its own
   chip reports the facts itself (PROVIDERS.md section 3).
+- `herdr-app check` runs `init()` for real: ask `checking()` first, or every check starts the daemon.
 - Re-exec the daemon when `track.py` changes, or edits keep running the old code until it is restarted.
 - macOS only for sampling: on Linux idle time and the frontmost app are unknown, so only agents count.
 

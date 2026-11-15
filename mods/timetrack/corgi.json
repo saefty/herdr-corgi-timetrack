@@ -2,7 +2,7 @@
   "name": "timetrack",
   "version": "0.2.0",
   "requires": {
-    "herdr-app": ">=0.1.14"
+    "herdr-app": ">=0.1.16"
   },
   "provides": {},
   "keys": null

@@ -4,7 +4,7 @@
 
 <p align="center"><img src="preview.png" width="70%" alt="The time tracker's popup with today's timeline" /></p>
 
-<p align="center"><sub>✓&nbsp;Free,&nbsp;MIT &nbsp;·&nbsp; ✓&nbsp;Runs&nbsp;locally &nbsp;·&nbsp; ✓&nbsp;herdr-app&nbsp;0.1.14+</sub></p>
+<p align="center"><sub>✓&nbsp;Free,&nbsp;MIT &nbsp;·&nbsp; ✓&nbsp;Runs&nbsp;locally &nbsp;·&nbsp; ✓&nbsp;herdr-app&nbsp;0.1.16+</sub></p>
 
 Part of [Corgi](https://github.com/saefty/herdr-corgi), a set of Herdr mods that plug into each other.
 
@@ -66,7 +66,7 @@ are separate mods; each works alone.
 
 - macOS, for `ioreg`, `lsappinfo`, `lsof`, `pgrep` and `open`.
 - `python3` on your PATH, standard library only.
-- The Herdr app.
+- The Herdr app, 0.1.16 or newer.
 
 On Linux the tracker runs and writes the workbook, but it sees neither idle time nor the frontmost app.
 Then only working agents count, also while you are away, and Open Excel fails (it calls macOS `open`). Windows is not
@@ -107,7 +107,7 @@ By hand, step by step:
      { "id": "timetrack", "content": { "mod": "timetrack", "props": { "part": "float" } }, "edge": "bottom", "align": "start" }
    ]
    ```
-3. Run `herdr-app check ~/.config/herdr-app/mods/timetrack`.
+3. Run `herdr-app check ~/.config/herdr-app/mods/timetrack`. The check does not start the tracker and writes nothing.
 
 The chip starts the tracker. It runs `python3 track.py` from the mod folder, reads and writes
 `~/.config/herdr-app/timetrack-data/`, writes the workbook, and runs `ioreg`, `lsappinfo`, `lsof` and
