@@ -37,6 +37,8 @@ Excel workbook, one sheet per month, and changes you make in that workbook are k
 - Work is: you are not idle, and a work app is frontmost, or Herdr is frontmost, or an agent is working.
   With such a mod, Herdr and agents count only in the setups you choose.
 - The chip goes into a bar as a block, or floats over any layout.
+- Optional: the Herdr window's title names the project being tracked, for window switchers and other time
+  trackers that read window titles (`window_title`, off by default).
 - The popup shows today's segments on a timeline, start, end, breaks, net, the week's progress, and what
   counted (Herdr, Agents, apps, spaces).
 - Edit corrects today's start, end, breaks and note. "Use tracked times" drops the corrections.
@@ -136,6 +138,7 @@ the mod's `config.json`, so updating the mod keeps them.
 | `excel_every_minutes` | `15` | how often the workbook is rewritten while tracking |
 | `min_segment_seconds` | `60` | shorter segments are dropped |
 | `keep_months` | `24` | older segment files are deleted |
+| `window_title` | `false` | `true`: while a project is tracked, the Herdr window's title is `<project> - Herdr`; `Herdr` again when nothing is tracked, on Pause, and when the chip is removed. The project is the shown space when it counts, else the space of a working agent. It follows the tracker within about 40 s. |
 
 ## Customize
 

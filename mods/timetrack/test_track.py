@@ -100,6 +100,14 @@ def test_manual():
     assert st["paused"] is None and st["open"]["source"] == "manual"
     track.step(st, T0 + 41 * 60, False, [], [], CFG, active=True)
     assert st["open"]["last"] == T0 + 41 * 60, "after Resume, any activity keeps the segment going"
+    # The window title: the project of the last counted sample, only with the setting, never while paused.
+    on = {**CFG, "window_title": True}
+    assert track.status(st, on, T0 + 41 * 60)["title"] is None, "a manual segment without a project"
+    track.step(st, T0 + 42 * 60, True, ["Herdr", "Agents"], ["bookshelf", "orbit-sync"], CFG)
+    assert track.status(st, on, T0 + 42 * 60)["title"] == "bookshelf" and track.status(st, CFG, T0 + 42 * 60)["title"] is None
+    track.pause(st, T0 + 43 * 60)
+    assert track.status(st, on, T0 + 43 * 60)["title"] is None
+    track.resume(st, T0 + 40 * 60)
     run(st, T0 + 40 * 60, 5, True)
     assert track.not_work(st, T0 + 46 * 60) == [] and st["open"] is None, "not work deletes the segment"
     # A pause ends with its day.

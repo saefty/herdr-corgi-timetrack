@@ -9,6 +9,7 @@
   "sheet_language": "en",
   "excel_every_minutes": 15,
   "keep_months": 24,
+  "window_title": false,
   "work_apps": [
     "com.microsoft.VSCode", "Code",
     "com.todesktop.230313mzl4w4u92", "Cursor",

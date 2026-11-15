@@ -67,7 +67,9 @@ edits the person makes in that workbook are read back and kept.
 **Built from:** one mod, `mods/timetrack`, `mod.json` `{ "place": "none", "title": "Work time", "overlay":
 { "kind": "popup", "width": 340, "height": 320 } }`.
 
-- `main.js`: `props().part` `"bar"` or `"float"` draws the chip, anything else the popup. A chip runs
+- `main.js`: `props().part` `"bar"` or `"float"` draws the chip, anything else the popup. With the setting
+  `window_title` a chip calls `setWindowTitle("<project> - Herdr")` from its timer when `status.json`'s `title`
+  changes, and `setWindowTitle(null)` when nothing is tracked or the last chip closes. A chip runs
   `exec("python3", [track.py, "--facts", json])` and `readTextFile(status.json)` on `cx.timer.every(10000)`,
   and opens the popup with `openOverlay({ mod: "timetrack", kind: "popup", width: 340, height: 320 })`. The
   facts come from `spaces()` (the active one), `agents()` (`status`, `address`, `space`, `space_name`),

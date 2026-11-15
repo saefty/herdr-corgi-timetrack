@@ -9,8 +9,8 @@
 // Which Herdr contexts count as work comes from the goto.context hook and timetrack.contexts (PROVIDERS.md).
 import { View, div } from "gpui-kit";
 import { h_flex, v_flex, InputState, Input } from "gpui-base";
-import { theme, exec, appHome, readTextFile, writeTextFile, watchFolder, props, openOverlay, shared, spaces, agents, checking } from "herdr";
-import { samplerAlive } from "./chip.js";
+import { theme, exec, appHome, readTextFile, writeTextFile, watchFolder, props, openOverlay, shared, spaces, agents, checking, setWindowTitle } from "herdr";
+import { samplerAlive, windowTitle } from "./chip.js";
 
 const DATA = () => `${appHome()}/timetrack-data`;
 const TRACK = () => `${appHome()}/mods/timetrack/track.py`;
@@ -21,6 +21,8 @@ const sod = (s) => `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}
 const EDIT = [["start", "Start", "07:30", sod], ["end", "End", "17:00", sod], ["breaks", "Breaks", "0:30", hm], ["note", "Note", "Free text", (v) => v]];
 const STATE = { tracking: "Tracking", paused: "Paused", off: "Not tracking" };
 const POPUP = { mod: "timetrack", kind: "popup", width: 340, height: 320 };
+// One window, one title: what the chips last set (null: Herdr's own), and how many chips live. Shared by the copies.
+const win = { title: null, chips: 0 };
 
 // What Herdr shows, for track.py: the shown space and the working agents, each with its context from the
 // goto.context hook (terminal, else space), plus which contexts count (timetrack.contexts).
@@ -58,9 +60,11 @@ export default class TimeTrack extends View {
   }
 
   // The popup went: its watch on the data folder is given back (a cancelled watch resolves, and the loop ends).
+  // The last chip went: Herdr's own window title again.
   async close() {
     this.closed = true;
     this.watch?.cancel();
+    if (this.counted && --win.chips === 0 && win.title !== null) { win.title = null; setWindowTitle(null); }
   }
 
   // The facts for track.py, every 10 s. While the sampler is alive the chip writes herdr.json itself: a process
@@ -80,9 +84,14 @@ export default class TimeTrack extends View {
   initChip(cx) {
     // `herdr-app check` runs init for real: there the chip must not start the tracker or write herdr.json.
     if (checking()) return;
+    win.chips++;
+    this.counted = true;
     const tick = (cx) => cx.spawn(async (cx) => {
       await this.report();
       try { this.s = JSON.parse((await readTextFile(`${DATA()}/status.json`)) ?? "null"); } catch {}
+      // Setting window_title: the window is named after the tracked project. Set only when it changes, never in render.
+      const title = windowTitle(this.s, Date.now());
+      if (title !== win.title) { win.title = title; setWindowTitle(title); }
       const key = this.s ? `${this.s.state}|${hm(this.s.net)}|${Math.floor(this.s.at / 60)}` : "";
       if (key !== this.key) { this.key = key; cx.notify(); }
     });
